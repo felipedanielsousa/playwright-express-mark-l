@@ -1,4 +1,4 @@
-import { test } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 import { faker } from '@faker-js/faker'
 import { TaskModel } from './fixtures/task.model'
 import { postTask, deleteTaskByHelper } from './support/helpers'
@@ -47,5 +47,8 @@ test('campo obrigatório', async ({ page }) => {
 
     await tasksPage.go()
     await tasksPage.create(task)
+
+    const validationMessage = await tasksPage.inputTaskName.evaluate(e => (e as HTMLInputElement).validationMessage)
+    expect(validationMessage).toEqual('This is a required field')
 })
 
