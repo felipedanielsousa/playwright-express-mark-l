@@ -11,10 +11,13 @@ export class TasksPage {
     }
 
     async create(task: TaskModel) {
-
         await this.inputTaskName.fill(task.name)
-
         await this.page.click('css= button >> text=Create')
+    }
+
+    async toggle(taskName: string){
+        const target = this.page.locator(`xpath = //p[text()="${taskName}"]/..//button[contains(@class, "Toggle")]`)
+        await target.click()
     }
 
     async go() {
@@ -29,6 +32,11 @@ export class TasksPage {
     async alertHaveText(text: string) {
         const target = this.page.locator('.swal2-html-container')
         await expect(target).toHaveText(text)
+    }
+
+    async shouldBeDone(taskName: string){
+        const target = this.page.getByText(taskName)
+        await expect(target).toHaveCSS('text-decoration-line','line-through')
     }
 
 

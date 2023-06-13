@@ -3,52 +3,69 @@ import { faker } from '@faker-js/faker'
 import { TaskModel } from './fixtures/task.model'
 import { postTask, deleteTaskByHelper } from './support/helpers'
 import { TasksPage } from './support/pages/tasks'
+import data from './fixtures/tasks.json'
 
-test('deve poder cadastrar uma nova tarefa', async ({ page, request }) => {
+//describe organiza por contexto
+test.describe('cadastro', () => {
 
-    const task: TaskModel = {
-        name: 'Ler um livro de TypeScript',
-        is_done: false
-    }
+    test('deve poder cadastrar uma nova tarefa', async ({ page, request }) => {
 
-    await deleteTaskByHelper(request, task.name)
+        const task = data.success as TaskModel
 
-    const  tasksPage: TasksPage = new TasksPage(page)
+        await deleteTaskByHelper(request, task.name)
 
-    await tasksPage.go()
-    await tasksPage.create(task)
-    await tasksPage.shouldHaveText(task.name)
+        const tasksPage: TasksPage = new TasksPage(page)
+
+        await tasksPage.go()
+        await tasksPage.create(task)
+        await tasksPage.shouldHaveText(task.name)
+    })
+
+    test('não deve permitir tarefa duplicada', async ({ page, request }) => {
+
+        const task = data.duplicate as TaskModel
+
+        await deleteTaskByHelper(request, task.name)
+        await postTask(request, task)
+
+        const tasksPage: TasksPage = new TasksPage(page)
+
+        await tasksPage.go()
+        await tasksPage.create(task)
+        await tasksPage.alertHaveText('Task already exists!')
+    })
+
+    test('campo obrigatório', async ({ page }) => {
+
+        const task = data.required as TaskModel
+
+        const tasksPage: TasksPage = new TasksPage(page)
+
+        await tasksPage.go()
+        await tasksPage.create(task)
+
+        const validationMessage = await tasksPage.inputTaskName.evaluate(e => (e as HTMLInputElement).validationMessage)
+        expect(validationMessage).toEqual('This is a required field')
+    })
 })
 
-test('não deve permitir tarefa duplicada', async ({ page, request }) => {
+test.describe('atualização', () => {
 
-    const task: TaskModel = {
-        name: 'Comprar ketchup',
-        is_done: false
-    }
-    await deleteTaskByHelper(request, task.name)
-    await postTask(request, task)
+    test('deve concluir uma tarefa', async ({ page, request }) => {
+        const task = data.update as TaskModel
 
-    const  tasksPage: TasksPage = new TasksPage(page)
+        await deleteTaskByHelper(request, task.name) //garantir que sempre estará is_done: false (não concluída)
+        await postTask(request, task)
 
-    await tasksPage.go()
-    await tasksPage.create(task)
-    await tasksPage.alertHaveText('Task already exists!')
+        const tasksPage: TasksPage = new TasksPage(page)
+
+        await tasksPage.go()
+        await tasksPage.toggle(task.name)
+        await tasksPage.shouldBeDone(task.name)
+
+    })
 })
 
-test('campo obrigatório', async ({ page }) => {
 
-    const task: TaskModel = {
-        name: '',
-        is_done: false
-    }
 
-    const  tasksPage: TasksPage = new TasksPage(page)
-
-    await tasksPage.go()
-    await tasksPage.create(task)
-
-    const validationMessage = await tasksPage.inputTaskName.evaluate(e => (e as HTMLInputElement).validationMessage)
-    expect(validationMessage).toEqual('This is a required field')
-})
 
